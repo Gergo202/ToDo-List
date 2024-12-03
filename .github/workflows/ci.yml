@@ -1,0 +1,28 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build with Maven
+        run: mvn clean install
+
+      - name: Run unit tests
+        run: mvn test
+
+      - name: Run Postman tests
+        run: |
+          npm install -g newman
+          newman run path/to/collection.json

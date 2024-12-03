@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teendőlista</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #888888;
+        }
+        h1 {
+            color: #333
+        }
+        .todo-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #28a745;
+            border: 1px solid #333333;
+            border-radius: 5px;
+        }
+        .todo-item.completed span {
+            text-decoration: line-through;
+            color: grey;
+        }
+        button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-complete {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #c82333;
+            color: white;
+        }
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #dddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .input-group button {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-container">
+        <h1>Teendőlista</h1>
+
+        <div id="todo-list"></div>
+
+        <div class="input-group">
+            <input type="text" id="new-todo" placeholder="Új teendő hozzáadása">
+            <button onclick="addTodo()">Hozzáadás</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/todos';
+
+        async function loadTodos() {
+            const response = await fetch(API_URL);
+            const todos = await response.json();
+            const todoList = document.getElementById('todo-list');
+            todoList.innerHTML = '';
+
+            todos.forEach(todo => {
+                const todoDiv = document.createElement('div');
+                todoDiv.className = 'todo-item';
+                if (todo.done)
+                {
+                    todoDiv.classList.add('done');
+                }
+                todoDiv.innerHTML = `
+                    <span>ID: ${todo.id} - ${todo.description}</span>
+                    <div>
+                        <button class="btn-complete" onClick="toggleDone(${todo.id}, ${!todo.done})">
+                            ${todo.done ? 'Visszaállítás' : 'Kész'}
+                        </button>
+                        <button class="btn-delete" onClick="deleteTodo(${todo.id}">Törlés</button>
+                    </div>
+                `;
+                todoList.appendChild(todoDiv);
+            });
+        }
+
+        async function addTodo() {
+            const inputField = document.getElementById('new-todo');
+            const description = inputField.value.trim();
+            if (!description) {
+                alert('Adj meg egy teendőt');
+                return;
+            }
+
+            fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description })
+            })
+            .then(() => {
+                inputField.value = '';
+                return loadTodos();
+            })
+            .catch(error => console.error('Hiba történt a teendő hozzáadásakor:', error));
+        }
+
+        async function toggleDone(id, done) {
+            fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ done })
+            })
+            .then(() => loadTodos())
+            .catch(error => console.error('Hiba történt a státusz módosításakor:', error));
+        }
+
+        async function deleteTodo(id) {
+            fetch(`${API_URL}/${id}`, {
+                method: 'DELETE'
+            })
+            .then(() => loadTodos())
+            .catch(error => console.error('Hiba történt a teendő törlésekor:', error));
+        }
+
+        loadTodos();
+    </script>
+</body>
+</html>
